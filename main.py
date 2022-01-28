@@ -2,7 +2,11 @@ from xml.dom import xmlbuilder
 import numpy as np
 
 
-#10*5 array
+#var
+inputlenght = 10
+
+cost = 0.0
+
 Input_1 = np.array([
     [130, 100, 500, 100,  10], #1
     [123, 745, 412, 324, 564], #0
@@ -16,83 +20,70 @@ Input_1 = np.array([
     [185,   1, 486,  20, 101], #1
     ])
 
+Real = np.array([
+    [1.0, 0.0], #1
+    [0.0, 1.0], #0
+    [0.0, 1.0], #0
+    [1.0, 0.0], #1
+    [1.0, 0.0], #1
+    [0.0, 1.0], #0
+    [0.0, 1.0], #0
+    [1.0, 0.0], #1
+    [1.0, 0.0], #1
+    [1.0, 0.0]  #1
+    ])
 
-inputlenght = 10
-
-
-#10*1 array
-Real = [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0]
-
-
-#Layer mit size 5, 3, 1
 layer1 = np.zeros(5)
 layer2 = np.zeros(3)
-layerO = np.zeros(1)
+layerO = np.zeros(2)
 
+Weights = np.zeros((np.random.random((Input_1[0].size, layer1.size)),
+                    np.random.random((layer1.size, layer2.size)),
+                    np.random.random((layer2.size,   layerO.size))))
 
-#Weights mit shape vom Layer
-Weights1 = np.random.random((Input_1[0].size, layer1.size))
-Weights2 = np.random.random((layer1.size ,  layer2.size))
-WeightsO = np.random.random((layer2.size,   layerO.size))
-
-
-#get weights debug
-print("W1:")
-print(Weights1)
-print("W2:")
-print(Weights2)
-print("WO:")
-print(WeightsO)
-
-
-#return tmp for iterate
-ret = np.array
-
-
-#Iterate durch
-def Iterate(x):
-
-    for xx in range(x):
-        #dot product
-        global layer1
-        layer1 = np.dot(Input_1[xx],    Weights1)
-
-        global layer2
-        layer2 = np.dot(layer1,         Weights2)
-
-        global layerO
-        layerO = np.dot(layer2,         WeightsO)
-
-        ret[xx] = layer1, layer2, layerO
-
-    return ret
-    
-
+#matix multiplikation
+def dot(input, weight):
+    return np.dot(input, weight)
 
 
 #ReLU
 def relu(x):
-    return max(0.0, x)
+    for i in range(x.size):
+        if(x[i] <= 0):
+            x[i] = 0
+    return x
 
 
-# sigmoid activation function
+#sigmoid
 def sigmoid(x):
-	return 1.0 / (1.0 + np.exp(-x))
+    tmp = [] * x
+    for i in range(tmp.size):
+        tmp[i] = 1.0 / (1.0 + np.exp(-x[i]))
+    return tmp
+
+
+#change
+def changeW(layer_in, layer_out, Weights_tmp):
+    for j in range(layer_out.size):
+        diff = Real[j] - layer_out[j]#änderungsrate
+        for i in range(layer_in.size):
+            Weights_tmp[i][j] = Weights_tmp[i][j] * diff
+    return Weights_tmp
 
 
 #start
-Iterate(inputlenght)[0]
+def Wbackprop(_Input_, W1, W2, WO):
+    WO = changeW(dot(dot(_Input_, W1), W2), dot(dot(dot(_Input_, W1), W2), WO), WO) #layer2,    layerO, Weights2
+    W2 = changeW(dot(_Input_, W1),          dot(dot(_Input_, W1), W2),          W2) #layer1,    layer2, Weights1
+    W1 = changeW(_Input_,                   dot(_Input_, W1),                   W1) #Input_1,   layer1, Weights0
 
 
-#def cost_tmp
-tmp = 0.0
+#gothrough
+def gothrough(W1, W2, WO, InputArray):
+    dot(dot(dot(InputArray, W1), W2), WO)
 
-for k in range(layer2.size):
-    for l in range(layerO.size):
-        for f in range(inputlenght):
-            
-            tmp = tmp + ret[f][2][l] #iteration;layer;neuron
 
-        WeightsO[k][l] = tmp[l]
-
-print(WeightsO.shape)
+#debug
+print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
+Weights = Wbackprop(Input_1[0], Weights[0], Weights[1], Weights[2])
+print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
