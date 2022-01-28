@@ -1,3 +1,4 @@
+from time import process_time_ns
 from xml.dom import xmlbuilder
 import numpy as np
 
@@ -33,13 +34,22 @@ Real = np.array([
     [1.0, 0.0]  #1
     ])
 
-layer1 = np.zeros(5)
-layer2 = np.zeros(3)
-layerO = np.zeros(2)
+layer0 = np.zeros(5)
+layer1 = np.zeros(3)
+layer2 = np.zeros(2)
 
-Weights = np.zeros((np.random.random((Input_1[0].size, layer1.size)),
-                    np.random.random((layer1.size, layer2.size)),
-                    np.random.random((layer2.size,   layerO.size))))
+Weights0 = np.random.random((Input_1[0].size,  layer0.size))
+Weights1 = np.random.random((layer0.size,      layer1.size))
+Weights2 = np.random.random((layer1.size,      layer2.size))
+
+
+#groupW
+Weights = np.array([
+    [Weights0],
+    [Weights1],
+    [Weights2]
+    ])
+
 
 #matix multiplikation
 def dot(input, weight):
@@ -72,18 +82,27 @@ def changeW(layer_in, layer_out, Weights_tmp):
 
 
 #start
-def Wbackprop(_Input_, W1, W2, WO):
-    WO = changeW(dot(dot(_Input_, W1), W2), dot(dot(dot(_Input_, W1), W2), WO), WO) #layer2,    layerO, Weights2
-    W2 = changeW(dot(_Input_, W1),          dot(dot(_Input_, W1), W2),          W2) #layer1,    layer2, Weights1
-    W1 = changeW(_Input_,                   dot(_Input_, W1),                   W1) #Input_1,   layer1, Weights0
+def Wbackprop(_Input_, W0, W1, W2):
+    W2 = changeW(dot(dot(_Input_, W0), W1), dot(dot(dot(_Input_, W0), W1), W2), W2) #layer1,    layer2, Weights2
+    W1 = changeW(dot(_Input_, W0),          dot(dot(_Input_, W0), W1),          W1) #layer1,    layer1, Weights1
+    W0 = changeW(_Input_,                   dot(_Input_, W0),                   W0) #Input_1,   layer1, Weights0
+    Weights_tmp = np.array([
+        [W0],
+        [W1],
+        [W2]
+        ])
+    return Weights_tmp
 
 
 #gothrough
-def gothrough(W1, W2, WO, InputArray):
-    dot(dot(dot(InputArray, W1), W2), WO)
+def gothrough(W0, W1, W2, InputArray):
+    return dot(dot(dot(InputArray, W0), W1), W2)
 
 
 #debug
-print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
-Weights = Wbackprop(Input_1[0], Weights[0], Weights[1], Weights[2])
-print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
+#print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
+#Weights = Wbackprop(Input_1[0], Weights[0], Weights[1], Weights[2])
+#print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
+print(Input_1[0].size)
+print(Weights.shape)
+print(dot(Input_1[0], Weights[0]))
