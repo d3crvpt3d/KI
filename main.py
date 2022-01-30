@@ -1,3 +1,5 @@
+from asyncio.windows_events import NULL
+import re
 from time import process_time_ns
 from xml.dom import xmlbuilder
 import numpy as np
@@ -9,16 +11,16 @@ inputlenght = 10
 cost = 0.0
 
 Input_1 = np.array([
-    [130, 100, 500, 100,  10], #1
+    [130, 100, 1, 100,  10], #1
     [123, 745, 412, 324, 564], #0
     [ 91,  94, 513, 412, 511], #0
-    [123, 123, 600, 128, 453], #1
-    [138, 105, 345,  95,  64], #1
+    [123, 123, 1, 128, 453], #1
+    [138, 105, 1,  95,  64], #1
     [123, 513,  46,  17,  46], #0
     [843, 513, 453,  83, 628], #0
-    [  3,  20, 400,  60, 246], #1
-    [138, 500, 700, 550,  68], #1
-    [185,   1, 486,  20, 101], #1
+    [  3,  20, 1,  60, 246], #1
+    [138, 500, 1, 550,  68], #1
+    [185,   1, 1,  20, 101], #1
     ])
 
 Real = np.array([
@@ -102,8 +104,8 @@ def Wbackprop(inputnumber, _Input_, W0, W1, W2):
     return Weights_tmp
 
 
-#gothrough
-def gothrough(W0, W1, W2, InputArray):
+#evaluation
+def evaluation(W0, W1, W2, InputArray):
     output = dot(dot(dot(InputArray, W0), W1), W2)
     return softmax(output)
 
@@ -114,9 +116,38 @@ def softmax(vector):
 	return e / e.sum()
 
 
+#gothrough
+def gothrough(round):
+    
+    return Wbackprop(round, Input_1[0], Weights[0], Weights[1], Weights[2])
+
+
+#zusammenfassen
+def Weights_zusammenfassen(real_weights, allweights):
+    real_weights = np.array(real_weights) #conv to numpy array
+    real_weights = real_weights * 0 #alle werte auf 0
+    for runde in range(len(allweights)):
+        real_weights = real_weights + allweights[runde]
+    real_weights = real_weights / len(allweights) # alle werte durch die größe des batches
+        
+    return real_weights
+
+
+#run for batch
+batchsize = 2
+for rounds in range(batchsize):
+    all_weights = []
+    all_weights.append(gothrough(rounds))
+Weights = Weights_zusammenfassen(Weights, all_weights)
+
+
+#print
+print(evaluation(Weights[0], Weights[1], Weights[2], Input_1[0])) #test
+
+
 #debug
-print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
-Weights = Wbackprop(0, Input_1[0], Weights[0], Weights[1], Weights[2])
-print("Gothrough 2: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
-Weights = Wbackprop(0, Input_1[0], Weights[0], Weights[1], Weights[2])
-print("Gothrough 3: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
+#print("evaluation 1: " + str(evaluation(Weights[0], Weights[1], Weights[2], Input_1[0])))
+#Weights = Wbackprop(0, Input_1[0], Weights[0], Weights[1], Weights[2])
+#print("evaluation 2: " + str(evaluation(Weights[0], Weights[1], Weights[2], Input_1[0])))
+#Weights = Wbackprop(0, Input_1[0], Weights[0], Weights[1], Weights[2])
+#print("evaluation 3: " + str(evaluation(Weights[0], Weights[1], Weights[2], Input_1[0])))
