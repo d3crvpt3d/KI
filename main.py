@@ -44,16 +44,16 @@ Weights2 = np.random.random((layer1.size,      layer2.size))
 
 
 #groupW
-Weights = np.array([
-    [Weights0],
-    [Weights1],
-    [Weights2]
-    ])
-
+Weights = []
+Weights.append(Weights0)
+Weights.append(Weights1)
+Weights.append(Weights2)
 
 #matix multiplikation
 def dot(input, weight):
-    return np.dot(input, weight)
+    dotproduct = np.dot(input, weight)
+
+    return sigmoid(dotproduct)
 
 
 #ReLU
@@ -61,48 +61,62 @@ def relu(x):
     for i in range(x.size):
         if(x[i] <= 0):
             x[i] = 0
+    
     return x
 
 
 #sigmoid
-def sigmoid(x):
-    tmp = [] * x
-    for i in range(tmp.size):
-        tmp[i] = 1.0 / (1.0 + np.exp(-x[i]))
+def sigmoid(array):
+    tmp = np.zeros((array.size))
+    for i in range(array.size):
+        tmp[i] = 1.0 / (1.0 + np.exp(-array[i]))
+    
     return tmp
 
 
 #change
-def changeW(layer_in, layer_out, Weights_tmp):
-    for j in range(layer_out.size):
-        diff = Real[j] - layer_out[j]#änderungsrate
-        for i in range(layer_in.size):
-            Weights_tmp[i][j] = Weights_tmp[i][j] * diff
+def changeWeights(layer_in, layer_out, Weights_tmp, layer_out_gewollt):
+    for y in range(layer_out.size):
+        for x in range(layer_in.size):
+            diff = layer_out_gewollt[y] - layer_out[y] #änderungsrate
+            Weights_tmp[x][y] = Weights_tmp[x][y] + diff * layer_in[x] #weight wird um die different mit berücksichtigung der größe des neurons verändert
+    
     return Weights_tmp
 
 
 #start
-def Wbackprop(_Input_, W0, W1, W2):
-    W2 = changeW(dot(dot(_Input_, W0), W1), dot(dot(dot(_Input_, W0), W1), W2), W2) #layer1,    layer2, Weights2
-    W1 = changeW(dot(_Input_, W0),          dot(dot(_Input_, W0), W1),          W1) #layer1,    layer1, Weights1
-    W0 = changeW(_Input_,                   dot(_Input_, W0),                   W0) #Input_1,   layer1, Weights0
-    Weights_tmp = np.array([
-        [W0],
-        [W1],
-        [W2]
-        ])
+def Wbackprop(inputnumber, _Input_, W0, W1, W2):
+    W2 = changeWeights(dot(dot(_Input_, W0), W1), dot(dot(dot(_Input_, W0), W1), W2), W2, Real[inputnumber]) #layer1,      layer2, Weights2, gewollt
+
+    layer1_gewollt = dot(W2, Real[inputnumber]) #zurückrechnen = weights[x] "dot" layer_hinter
+    W1 = changeWeights(dot(_Input_, W0),          dot(dot(_Input_, W0), W1),          W1, layer1_gewollt) #layer0,    layer1, Weights1, gewollt
+
+    layer0_gewollt = dot(W1, layer1_gewollt) #zurückrechnen = weights[x] "dot" layer_hinter
+    W0 = changeWeights(_Input_,                   dot(_Input_, W0),                   W0, layer0_gewollt) #Input_1,   layer0, Weights0, gewollt
+
+    Weights_tmp = []
+    Weights_tmp.append(W0)
+    Weights_tmp.append(W1)
+    Weights_tmp.append(W2)
+
     return Weights_tmp
 
 
 #gothrough
 def gothrough(W0, W1, W2, InputArray):
-    return dot(dot(dot(InputArray, W0), W1), W2)
+    output = dot(dot(dot(InputArray, W0), W1), W2)
+    return softmax(output)
+
+
+#softmax
+def softmax(vector):
+	e = np.exp(vector)
+	return e / e.sum()
 
 
 #debug
-#print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
-#Weights = Wbackprop(Input_1[0], Weights[0], Weights[1], Weights[2])
-#print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
-print(Input_1[0].size)
-print(Weights.shape)
-print(dot(Input_1[0], Weights[0]))
+print("Gothrough 1: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
+Weights = Wbackprop(0, Input_1[0], Weights[0], Weights[1], Weights[2])
+print("Gothrough 2: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
+Weights = Wbackprop(0, Input_1[0], Weights[0], Weights[1], Weights[2])
+print("Gothrough 3: " + str(gothrough(Weights[0], Weights[1], Weights[2], Input_1[0])))
